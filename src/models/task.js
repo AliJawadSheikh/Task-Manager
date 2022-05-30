@@ -5,7 +5,12 @@ const taskSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    completed: { type: Boolean, default: 0 }
+    completed: { type: Boolean, default: 0 },
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'User'
+    }
 })
 
 const Task = mongoose.model('Task', taskSchema);
