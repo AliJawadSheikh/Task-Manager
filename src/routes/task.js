@@ -9,7 +9,7 @@ router.post('/tasks', auth, async(req, res) => {
             ...req.body,
             owner: req.user._id
         }).save()
-        res.status(200).send(task)
+        res.status(201).send(task)
     } catch (e) { res.status(400).send(e) }
 })
 

@@ -1,24 +1,9 @@
 const request = require('supertest');
-const app = require('../src/app');
-const mongoose = require('mongoose')
-const jwt = require('jsonwebtoken')
+const app = require('../src/app')
 const User = require('../src/models/user')
+const { testUserOne, setupDB } = require('./fixtures/db')
 
-const userID = new mongoose.Types.ObjectId()
-const UserOne = {
-    _id: userID,
-    name: 'Ali',
-    email: 'rtuser1@gmail.com',
-    password: 'rtuser0',
-    tokens: {
-        token: jwt.sign({ _id: userID }, process.env.JWT_SECRET)
-    }
-}
-
-beforeEach(async() => {
-    await User.deleteMany();
-    await new User(UserOne).save();
-})
+beforeEach(setupDB);
 
 test('Should Signup a New User', async() => {
     const response = await request(app)
@@ -47,8 +32,8 @@ test('Should Login Existing User', async() => {
     const response = await request(app)
         .post('/users/login')
         .send({
-            email: UserOne.email,
-            password: UserOne.password
+            email: testUserOne.email,
+            password: testUserOne.password
         })
         .expect(200)
 
@@ -60,8 +45,8 @@ test('Shouldn\'t Login User with Wrong Credentials', async() => {
     await request(app)
         .post('/users/login')
         .send({
-            email: UserOne.email,
-            password: UserOne.name
+            email: testUserOne.email,
+            password: testUserOne.name
         })
         .expect(400)
 })
@@ -69,7 +54,7 @@ test('Shouldn\'t Login User with Wrong Credentials', async() => {
 test('Should Read User\'s Profile', async() => {
     await request(app)
         .get('/users/me')
-        .set('Authorization', `Bearer ${UserOne.tokens.token}`)
+        .set('Authorization', `Bearer ${testUserOne.tokens.token}`)
         .expect(200)
 })
 
@@ -82,9 +67,9 @@ test('Shouldn\'t Allow to Read User\'s Profile without Authentication Token', as
 test('Should Delete Authenticated User\'s Profile', async() => {
     await request(app)
         .delete('/users/me')
-        .set('Authorization', `Bearer ${UserOne.tokens.token}`)
+        .set('Authorization', `Bearer ${testUserOne.tokens.token}`)
         .expect(200)
-    const user = await User.findById(UserOne._id)
+    const user = await User.findById(testUserOne._id)
     expect(user).toBeNull()
 })
 
@@ -97,30 +82,30 @@ test('Shouldn\'t Delete Unauthenticated User\'s Profile', async() => {
 test('Should upload the Avatar', async() => {
     await request(app)
         .post('/users/me/avatar')
-        .set('Authorization', `Bearer ${UserOne.tokens.token}`)
+        .set('Authorization', `Bearer ${testUserOne.tokens.token}`)
         .attach('avatar', 'tests/fixtures/ajs-profile.jpg')
         .expect(200);
 
-    const user = await User.findById(UserOne._id);
+    const user = await User.findById(testUserOne._id);
     expect(user.avatar).toEqual(expect.any(Buffer));
 })
 
 test('Should Update Valid User Fields', async() => {
     const response = await request(app)
         .patch('/users/me')
-        .set('Authorization', `Bearer ${UserOne.tokens.token}`)
+        .set('Authorization', `Bearer ${testUserOne.tokens.token}`)
         .send({
             name: 'Jawad Sheikh'
         })
         .expect(200)
-    const user = await User.findById(UserOne._id)
+    const user = await User.findById(testUserOne._id)
     expect(response.body.name).toBe(user.name)
 })
 
 test('Should Not Update InValid User Fields', async() => {
     await request(app)
         .patch('/users/me')
-        .set('Authorization', `Bearer ${UserOne.tokens.token}`)
+        .set('Authorization', `Bearer ${testUserOne.tokens.token}`)
         .send({
             Company: 'Rolustech'
         })
@@ -130,7 +115,7 @@ test('Should Not Update InValid User Fields', async() => {
 test('Should Not Update Unauthenticated User Fields', async() => {
     await request(app)
         .patch('/users/me')
-        .set('Authorization', `Bearer ${UserOne.tokens.token.token}`)
+        .set('Authorization', `Bearer ${testUserOne.tokens.token.token}`)
         .send({
             name: 'Jawad Sheikh'
         })
